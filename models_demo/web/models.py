@@ -10,15 +10,40 @@ from django.db import models
 #     REGULAR = 'Regular',
 #     SENIOR = 'Senior',
 
+class AuditInfoMixin(models.Model):
+    class Meta:
+        abstract=True
+
+    created_on = models.DateTimeField(
+        auto_now_add=True,
+    )
+    # This will be automatically set on each 'save/update'
+    updated_on = models.DateTimeField(
+        auto_now=True,
+    )
+
+class DeletableMixin(models.Model):
+    class Meta:
+        abstract=True
+
+    is_deleted = models.BooleanField(default=False)
+
 # First create class department(AND MIGRATE),
 # and then add it to the other class with ForeignKey(and then MIGRATE AGAIN)
-class Department(models.Model):
+class Department(AuditInfoMixin, models.Model):
     name = models.CharField(
         max_length=15,
     )
 
+    slug = models.SlugField(
+        unique=True,
+    )
+
     def __str__(self):
         return f'Id: {self.pk}'
+
+    def get_absolute_url(self):
+        pass
 
 
 class Project(models.Model):
@@ -28,6 +53,15 @@ class Project(models.Model):
 
 
 class Employee(models.Model):
+    class Meta:
+
+    # правим си вътрешен клас на основния клас Employee,
+    # където да добавим мета-данните за него
+    # как искаме моделите да бъдат сортирани, ако не им
+    # бъде направена допълнителна сортировка
+    ordering = ['-age', 'years_of_employment']
+
+
     LEVEL_JUNIOR = 'Junior'
     LEVEL_REGULAR = 'Regular'
     LEVEL_SENIOR = 'Senior'
@@ -72,13 +106,6 @@ class Employee(models.Model):
     is_full_time = models.BooleanField(
         null=True,
     )
-    created_on = models.DateTimeField(
-        auto_now_add=True,
-    )
-    # This will be automatically set on each 'save/update'
-    updated_on = models.DateTimeField(
-        auto_now=True,
-    )
 
     #Many-to-One/Each department has many employees/
     department = models.ForeignKey(
@@ -103,6 +130,8 @@ class Employee(models.Model):
                f'Name:{self.first_name} {self.last_name}/' \
 
 
+
+
 # One-To-One
 # Each Employee has only one Access Card
 
@@ -116,6 +145,9 @@ class AccessCard(models.Model):
 
 
 class Category(models.Model):
+
+    class Meta:
+        verbose_name_plural = 'Categories'
     name = models.CharField(
         max_length=15,
     )
